@@ -8,8 +8,9 @@ import pandas as pd
 def import_data(db_path,parquet_path):
    cnx = sqlite3.connect(db_path)
    grocery_sales = pd.read_sql_query('SELECT * from grocery_sales',cnx)
-   print(grocery_sales)
    grocery_sales['Date'] = pd.to_datetime(grocery_sales['Date'],errors='coerce')
+   grocery_sales.drop(grocery_sales[grocery_sales['Weekly_Sales'] == 'null'].index,axis = 0,inplace=True)
+   grocery_sales['Weekly_Sales'] = grocery_sales['Weekly_Sales'].astype(float)
    return grocery_sales, pd.read_parquet(parquet_path)
 
 def extract(df1,df2):
