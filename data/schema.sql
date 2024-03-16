@@ -3,5 +3,5 @@ CREATE TABLE grocery_sales(
   "Store_ID" INTEGER,
   "Date" TEXT,
   "Dept" INTEGER,
-  "Weekly_Sales" REAL
+  "Weekly_Sales" FLOAT
 );
