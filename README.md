@@ -1,5 +1,6 @@
-I've decided to build a data cleaning and aggregation pipeline using a walmart dataset I found online and extra economical data I've found in a Parquet file. I've done the same pipeline 4 times to showcase my skills in these 4 technologies. 
-The technologies are: Pandas, Spark DataFrames, Spark rdd's and Apache Beam Pcollections with GCP and Dataflow. Here is a breakdown of what this pipeline does:
+I've decided to build a data cleaning and aggregation pipeline using walmart data and local economical data in a Parquet file. I've done the same pipeline four times to showcase my skills in these four technologies. 
+
+The technologies are: Python Pandas, Spark DataFrames, Spark RDD's and Apache Beam Pcollections with GCP and Dataflow. Here is a breakdown of what this pipeline does:
 
 Pipeline Steps:
 1. Import data from SQLite, CSV and parquet sources
