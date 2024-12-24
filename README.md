@@ -9,3 +9,16 @@ Pipeline Steps:
 4. Calculate monthly sales averages
 5. Export two CSV files. A clean_output.csv and an aggregated_output.csv with these monthly sales averages
 6. Validate we have both output files locally or in the cloud
+
+## Testing
+
+The project includes comprehensive test coverage:
+- Unit tests for all transforms
+- Integration tests for pipeline components
+- Performance tests for data processing
+- Type hint validation
+- Documentation coverage
+
+Run tests with bash:
+pytest tests/
+
