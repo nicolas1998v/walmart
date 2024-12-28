@@ -13,12 +13,21 @@ Pipeline Steps:
 ## Testing
 
 The project includes comprehensive test coverage:
-- Unit tests for all transforms
-- Integration tests for pipeline components
-- Performance tests for data processing
-- Type hint validation
-- Documentation coverage
+test_run_pipeline_cloud: # Verifies pipeline runs with Dataflow runner and cloud options (skipped)
+test_run_pipeline_with_dataflow_options: # Verifies pipeline runs with custom Dataflow options (skipped)
+test_parse_transform_performance: # Checks if ParseCSVTransform can handle large datasets efficiently
+test_sales_transform_performance: # Verifies SalesTransform's performance with large datasets
+test_memory_usage: # Monitors memory usage during pipeline operations
+test_write_to_gcs_transform: # Verifies data is correctly written to Google Cloud Storage
+test_merge_transform: # Tests if data from multiple sources is merged correctly
+test_parse_csv_transform_with_invalid_data: # Checks how parser handles malformed CSV data
+test_parse_csv_transform_with_missing_values: # Verifies parser's handling of CSV rows with missing fields
+test_sales_transform: # Tests the business logic for sales data aggregation
+test_validate_gcs_paths: # Verifies GCS path validation functionality
+test_add_sequential_index: # Tests if sequential indices are correctly added to records
 
 Run tests with bash:
 pytest tests/
+
+
 
