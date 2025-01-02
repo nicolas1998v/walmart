@@ -2,6 +2,7 @@ I've decided to build a data cleaning and aggregation pipeline using walmart dat
 
 The technologies are: Python Pandas, Spark DataFrames, Spark RDD's and Apache Beam Pcollections with GCP and Dataflow. Here is a breakdown of what this pipeline does:
 
+
 Pipeline Steps:
 1. Import data from SQLite, CSV and parquet sources
 2. Merge datasets on index
@@ -9,6 +10,17 @@ Pipeline Steps:
 4. Calculate monthly sales averages
 5. Export two CSV files. A clean_output.csv and an aggregated_output.csv with these monthly sales averages
 6. Validate we have both output files locally or in the cloud
+
+## Executing
+
+To run the code, clone the repo, install the requirements and run : 
+
+```sh
+python pipeline_spark_rdd.py
+python pipeline_spark_dataframes.py
+python pipeline_pandas.py
+cd pipeline_dataflow/src && python -m pipeline_dataflow.main
+```
 
 ## Testing
 
@@ -38,7 +50,9 @@ test_validate_gcs_paths: # Verifies GCS path validation functionality
 test_add_sequential_index: # Tests if sequential indices are correctly added to records
 
 Run tests with bash:
-pytest tests/
+```sh
+pytest pipeline_dataflow/pipeline_dataflow/tests/
+```
 
 
 
