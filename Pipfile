@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 pandas = "*"
 pyarrow = "*"
+spark-sql-to-sqlite = "*"
+findspark = "*"
+jupyter = "*"
 
 [dev-packages]
 
