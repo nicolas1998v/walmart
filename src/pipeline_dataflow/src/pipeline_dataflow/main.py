@@ -26,7 +26,7 @@ from pipeline_dataflow.src.pipeline_dataflow.schemas import (
 from pipeline_dataflow.src.pipeline_dataflow.transforms.utils import (
     validate_gcs_paths,
     RoundFloatsDoFn,
-    AddSequentialIndex,
+    AddSequentialIndex
 )
 
 
@@ -135,34 +135,40 @@ def run_pipeline(options=None):
         )
 
         def format_clean_csv(element):
-            """Format clean data for CSV output, with a clean index."""
-            logging.info(f"Element received in format_clean_csv: {element}")
-            index, record = element  # Unpack the tuple
-            return f"{index},{record['Store_ID']},{record['Month']},{record['Dept']},{record.get('IsHoliday', '')},{record['Weekly_Sales']},{record.get('CPI', '')},{record.get('Unemployment', '')}"
+            """Format dictionary to CSV string"""
+            # If element is already a string, return it (for header)
+            if isinstance(element, str):
+                return element
+        
+            # Make sure values are in the correct order
+            values = [
+                str(element['index']),
+                str(element['Store_ID']),
+                str(element['Month']),
+                str(element['Dept']),
+                str(element['IsHoliday']),
+                str(element['Weekly_Sales']),
+                str(element['CPI']),
+                str(element['Unemployment'])
+            ]
+            
+            return ','.join(values)
 
         clean_with_index = (
             clean_data
-            | "Reset Index"
-            >> beam.Map(
-                lambda x: {k: x[k] for k in x if k != "index"}
-            )  # Remove any existing index
+            | "Reset Index" >> beam.Map(lambda x: {k: x[k] for k in x if k != "index"})  # Remove any existing index
             | "Add Sequential Index" >> beam.ParDo(AddSequentialIndex())
-            | "Log After Index"
-            >> beam.Map(lambda x: (logging.info(f"After index: {x}"), x)[1])
             | "Format Clean CSV" >> beam.Map(format_clean_csv)
         )
+        # Write clean data with forced header
         _ = (
-            (
-                p | "Create Clean Header" >> beam.Create([CLEAN_CSV_HEADERS]),
-                clean_with_index,
-            )
-            | "Flatten Clean Data" >> beam.Flatten()
-            | "Write Clean to GCS"
-            >> beam.io.WriteToText(
-                "gs://walmart-7890837/clean_output.csv", shard_name_template=""
+            clean_with_index
+            | "Write Clean to GCS" >> beam.io.WriteToText(
+                "gs://walmart-7890837/clean_output.csv",
+                shard_name_template="",
+                header=CLEAN_CSV_HEADERS  # This is the key change
             )
         )
-
         # Stage 4: Data Aggregation and Final Output
         # Process sales data for aggregated metrics
         sales_data = clean_data | "Process Sales" >> SalesTransform()
@@ -184,9 +190,17 @@ def run_pipeline(options=None):
         )
 
         def format_agg_csv(element):
-            """Format aggregated data for CSV output, with month-based index."""
-            index, record = element  # Unpack the tuple
-            return f"{index},{record['Month']},{record['Average_Weekly_Sales']}"
+            """Format aggregated data for CSV output"""
+            if isinstance(element, str):
+                return element
+    
+            values = [
+                str(element['index']),
+                str(element['Month']),
+                f"{element['Average_Weekly_Sales']:.2f}"
+            ]
+    
+            return ','.join(values)        
 
         agg_with_index = (
             sales_data
@@ -194,23 +208,29 @@ def run_pipeline(options=None):
             | "Format Agg CSV" >> beam.Map(format_agg_csv)
         )
 
+
+ # Write aggregated data with forced header
         _ = (
-            (p | "Create Agg Header" >> beam.Create([AGG_CSV_HEADERS]), agg_with_index)
-            | "Flatten Agg Data" >> beam.Flatten()
-            | "Write Agg to GCS"
-            >> beam.io.WriteToText(
-                "gs://walmart-7890837/agg_output.csv", shard_name_template=""
+            agg_with_index
+            | "Write Agg to GCS" >> beam.io.WriteToText(
+                "gs://walmart-7890837/agg_output.csv",
+                shard_name_template="",
+                header=AGG_CSV_HEADERS  # This is the key change
             )
-        )
-        # Stage 5: Output Validation
+        )       
+         # Stage 5: Output Validation
     bucket_name = "walmart-7890837"
+     # Run the pipeline and wait for completion
+    result = p.run()
+    result.wait_until_finish()  # Add this line to wait for the pipeline to finish
+
     validation_result = validate_gcs_paths(
-        bucket_name, ["clean_output.csv", "aggregated_output.csv"]
+        bucket_name, ["clean_output.csv", "agg_output.csv"]
     )
     logging.info(f"Output validation result: {validation_result}")
 
     # Run the pipeline and return the result
-    return p.run()
+    return result
 
 
 if __name__ == "__main__":

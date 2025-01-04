@@ -75,7 +75,6 @@ class ParseParquetTransform(beam.DoFn):
         row = dict(row)
         try:
             row["index"] = int(row["index"])  # Convert index to integer
-            row["Store_ID"] = int(row["Store_ID"])  # Convert Store_ID to integer
         except (ValueError, TypeError):
             return
 

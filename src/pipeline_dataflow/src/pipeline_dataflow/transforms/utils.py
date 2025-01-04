@@ -39,8 +39,12 @@ class RoundFloatsDoFn(beam.DoFn):
 
 class AddSequentialIndex(beam.DoFn):
     def __init__(self):
-        self.counter = 0
+        self._counter = 0
+    
+    def start_bundle(self):
+        self._counter = 0
 
     def process(self, element):
-        self.counter += 1
-        yield (self.counter, element)
+        self._counter += 1
+        element['index'] = self._counter  # Simply replace the index with counter
+        yield element
