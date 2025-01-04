@@ -10,11 +10,7 @@ import os
 """
 Flink ETL Pipeline for Walmart Sales Data Analysis
 
-This script implements the same ETL pipeline as the Spark version, but using Apache Flink.
-Key differences:
-- Uses PyFlink Table API instead of Spark DataFrames
-- Implements streaming-first approach typical to Flink
-- Modified data loading and transformation logic for Flink's processing model
+This script implements the same ETL pipeline, but using Apache Flink.
 """
 
 def create_flink_env():
