@@ -1,6 +1,6 @@
 from airflow import DAG
 from google.api_core.exceptions import NotFound
-from airflow.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from datetime import datetime, timedelta
 import logging
 from google.cloud import storage
@@ -308,34 +308,49 @@ def output_aggregated_data(**context):
         logger.error(f"Aggregated output failed: {str(e)}")
         raise
     
-def validate_outputs(**context):
-    """Validate that both output files exist in GCS"""
-    logger.info("=== Validating Outputs ===")
+def validate_outputs(mode='check', **context):
+    """
+    Validate GCS output files
+    Args:
+        mode (str): 'check' to verify existence or 'validate' to ensure completion
+    Returns:
+        bool: For 'check' mode: False to skip pipeline (files exist), True to run pipeline (files don't exist)
+              For 'validate' mode: True if validation passed, False if failed
+    """
+    logger.info(f"=== {'Checking' if mode == 'check' else 'Validating'} Outputs ===")
     try:
         storage_client = storage.Client()
         bucket = storage_client.bucket('walmart-7890837')
         
-        # Check for both files
         clean_blob = bucket.blob('clean_airflow_output.csv')
         agg_blob = bucket.blob('agg_airflow_output.csv')
         
-        clean_exists = clean_blob.exists()
-        agg_exists = agg_blob.exists()
+        files_exist = clean_blob.exists() and agg_blob.exists()
         
-        if clean_exists and agg_exists:
+        if files_exist:
             logger.info("Both output files found in GCS")
-            return True
+            if mode == 'check':
+                logger.info("Skipping pipeline execution as files already exist")
+                return False 
+            else:
+                logger.info("Pipeline execution completed successfully")
+                return True
         else:
             missing_files = []
-            if not clean_exists:
+            if not clean_blob.exists():
                 missing_files.append('clean_airflow_output.csv')
-            if not agg_exists:
+            if not agg_blob.exists():
                 missing_files.append('agg_airflow_output.csv')
-            logger.error(f"Missing files in GCS: {missing_files}")
-            return False
+            
+            if mode == 'check':
+                logger.info(f"Files missing, proceeding with pipeline execution: {missing_files}")
+                return True  
+            else:
+                logger.error(f"Pipeline validation failed. Missing files: {missing_files}")
+                return False
             
     except Exception as e:
-        logger.error(f"Validation failed: {str(e)}")
+        logger.error(f"{'Pre-check' if mode == 'check' else 'Validation'} failed: {str(e)}")
         raise
 
     # DAG definition
@@ -356,6 +371,14 @@ with DAG(
     concurrency=2,      # Limit concurrent tasks
     tags=['walmart', 'sales'],
 ) as dag:
+        
+    check_files = ShortCircuitOperator(
+        task_id='check_outputs_exist',
+        python_callable=validate_outputs,
+        op_kwargs={'mode': 'check'},
+        do_xcom_push=False,
+        dag=dag
+    )
     
     process_sales_task = PythonOperator(
         task_id='process_sales',
@@ -395,12 +418,14 @@ with DAG(
         retries=2,
     )
     
+    
     validate = PythonOperator(
         task_id='validate_outputs',
         python_callable=validate_outputs,
+        op_kwargs={'mode': 'validate'},
         do_xcom_push=False,
-        retries=2,
+        dag=dag
     )
     
     
-    [process_sales_task, process_economic_task] >> merge_datasets_task >> output_clean >> output_agg >> validate
+    check_files >> [process_sales_task, process_economic_task] >> merge_datasets_task >> output_clean >> output_agg >> validate
