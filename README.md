@@ -20,6 +20,7 @@ python pipeline_spark_rdd.py
 python pipeline_spark_dataframes.py
 python pipeline_pandas.py
 cd pipeline_dataflow/src && python -m pipeline_dataflow.main
+python pipeline_flink.py
 ```
 
 ## Testing
