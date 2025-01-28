@@ -22,7 +22,7 @@ python pipeline_pandas.py
 cd pipeline_dataflow/src && python -m pipeline_dataflow.main
 python pipeline_flink.py
 ```
-For the airfloe script, download the latest airflow package, create an account, create a GCP connection and then upload the dag and trigger it.
+For the airflow script, download the latest airflow package, create an account, create a GCP connection and then upload the dag and trigger it.
 
 ## Testing
 
